@@ -45,17 +45,25 @@ CSSアニメーションではなくWeb Animations APIを使用。
 ```javascript
 // 基準: 1px/秒で移動するduration
 const baseDuration = trackWidth * 1000; // ms
+const isReverse = speed < 0;
 
-animation.playbackRate = speed;
+this._animation = this._track.animate(keyframes, {
+  duration: baseDuration,
+  iterations: Infinity,
+  easing: "linear",
+  direction: isReverse ? "reverse" : "normal",
+});
+this._animation.playbackRate = Math.abs(speed);
 // speed=100  → 100px/秒
-// speed=-50  → 逆方向に50px/秒
+// speed=-50  → 逆方向に50px/秒（direction: "reverse"）
 // speed=0    → 停止
 ```
 
 利点:
-- マイナス値で自然に逆再生（`direction`プロパティ不要）
 - 0で自然に停止（特別処理不要）
-- 動的なspeed変更が容易
+- 動的なspeed変更が容易（アニメーション再作成不要）
+
+逆再生は`direction: "reverse"`で実現（playbackRateをマイナスにすると無限ループしない）。
 
 ### 進行率の保持
 
@@ -165,4 +173,30 @@ clone.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
 - ResizeObserver
 - MutationObserver
 - Animation
-- requestAnimationFrame ID
+
+## アクセシビリティ
+
+### prefers-reduced-motion 対応
+
+`matchMedia`で`prefers-reduced-motion: reduce`を監視:
+
+```javascript
+_setupReducedMotion() {
+  this._reducedMotionQuery = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  );
+
+  // 変更を監視
+  this._reducedMotionQuery.addEventListener("change", (e) => {
+    if (this._animation) {
+      if (e.matches) {
+        this._animation.pause();
+      } else {
+        this._animation.play();
+      }
+    }
+  });
+}
+```
+
+アニメーション作成時にも状態をチェックし、必要なら一時停止する。

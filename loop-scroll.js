@@ -27,6 +27,28 @@ class LoopScroll extends HTMLElement {
     this._render();
     this._initLoop();
     this._setupHoverPause();
+    this._setupReducedMotion();
+  }
+
+  _setupReducedMotion() {
+    this._reducedMotionQuery = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    );
+
+    // 変更を監視
+    this._reducedMotionQuery.addEventListener("change", (e) => {
+      if (this._animation) {
+        if (e.matches) {
+          this._animation.pause();
+        } else {
+          this._animation.play();
+        }
+      }
+    });
+  }
+
+  _prefersReducedMotion() {
+    return this._reducedMotionQuery?.matches ?? false;
   }
 
   _setupHoverPause() {
@@ -282,6 +304,7 @@ class LoopScroll extends HTMLElement {
     // Web Animations APIでアニメーション設定
     // 基準: 1px/秒で移動するduration、playbackRateでスピード調整
     const baseDuration = trackWidth * 1000; // ms (1px/秒基準)
+    const isReverse = speed < 0;
     this._animation = this._track.animate(
       [
         { transform: "translateX(0)" },
@@ -291,12 +314,18 @@ class LoopScroll extends HTMLElement {
         duration: baseDuration,
         iterations: Infinity,
         easing: "linear",
+        direction: isReverse ? "reverse" : "normal",
       }
     );
-    this._animation.playbackRate = speed; // マイナスで逆再生、0で停止
+    this._animation.playbackRate = Math.abs(speed); // 0で停止
 
     // 進行率を復元
     this._animation.currentTime = progress * baseDuration;
+
+    // prefers-reduced-motion対応
+    if (this._prefersReducedMotion()) {
+      this._animation.pause();
+    }
   }
 }
 
