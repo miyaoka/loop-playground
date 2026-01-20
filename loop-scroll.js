@@ -217,7 +217,6 @@ class LoopScroll extends HTMLElement {
     const containerWidth = this.clientWidth;
     const speed = this.speed;
     const isFillMode = this.fill;
-    const isReverse = speed < 0;
 
     // fillクローンを削除してから再作成（点滅防止のため測定後に削除）
     this._track
@@ -279,13 +278,6 @@ class LoopScroll extends HTMLElement {
     // cloneの位置を設定（トラック幅の右端）
     this._cloneContainer.style.left = `${trackWidth}px`;
 
-    // speed=0の場合はアニメーションをスキップ
-    if (speed === 0) {
-      this._animation?.cancel();
-      this._animation = null;
-      return;
-    }
-
     // 現在のアニメーション進行率を保存
     let progress = 0;
     if (this._animation) {
@@ -295,23 +287,24 @@ class LoopScroll extends HTMLElement {
       this._animation.cancel();
     }
 
-    // Web Animations APIでアニメーション設定（固定ピクセル値で移動）
-    const duration = trackWidth / Math.abs(speed) * 1000; // ms
+    // Web Animations APIでアニメーション設定
+    // 基準: 1px/秒で移動するduration、playbackRateでスピード調整
+    const baseDuration = trackWidth * 1000; // ms (1px/秒基準)
     this._animation = this._track.animate(
       [
         { transform: "translateX(0)" },
         { transform: `translateX(-${trackWidth}px)` },
       ],
       {
-        duration,
+        duration: baseDuration,
         iterations: Infinity,
         easing: "linear",
-        direction: isReverse ? "reverse" : "normal",
       }
     );
+    this._animation.playbackRate = speed; // マイナスで逆再生、0で停止
 
     // 進行率を復元
-    this._animation.currentTime = progress * duration;
+    this._animation.currentTime = progress * baseDuration;
   }
 }
 
