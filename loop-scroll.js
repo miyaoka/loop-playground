@@ -51,13 +51,16 @@ class LoopScroll extends HTMLElement {
     this._sizer.className = "loop-sizer";
     Object.assign(this._sizer.style, {
       display: "flex",
-      width: "max-content",
+      minWidth: "100%", // 子の%指定がコンテナ幅基準になるように
       visibility: "hidden",
     });
 
     // sizerにbaseItemsのクローンを追加（サイズ計算用）
     this._baseItems.forEach((item) => {
       const clone = item.cloneNode(true);
+      // idの重複を防ぐ
+      clone.removeAttribute("id");
+      clone.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
       this._sizer.appendChild(clone);
     });
 
@@ -69,7 +72,7 @@ class LoopScroll extends HTMLElement {
       top: "0",
       left: "0",
       display: "flex",
-      width: "max-content",
+      minWidth: "100%", // 子の%指定がコンテナ幅基準になるように
     });
 
     // 子要素をトラックに移動
@@ -156,7 +159,7 @@ class LoopScroll extends HTMLElement {
     }
 
     // 測定前にトラック幅をリセット
-    this._track.style.width = "max-content";
+    this._track.style.width = "";
 
     // レイアウト更新を待ってから測定（2フレーム待つ）
     this._rafId = requestAnimationFrame(() => {
@@ -236,6 +239,8 @@ class LoopScroll extends HTMLElement {
       ];
       allItems.forEach((item, index) => {
         const clone = item.cloneNode(true);
+        // %指定を実際のpx値に変換（_cloneContainerはabsoluteで%が効かないため）
+        clone.style.width = `${item.offsetWidth}px`;
         this._addClickBypass(clone, index);
         this._cloneContainer.appendChild(clone);
       });
@@ -252,6 +257,8 @@ class LoopScroll extends HTMLElement {
     ];
     allItems.forEach((item, index) => {
       const clone = item.cloneNode(true);
+      // %指定を実際のpx値に変換（_cloneContainerはabsoluteで%が効かないため）
+      clone.style.width = `${item.offsetWidth}px`;
       this._addClickBypass(clone, index);
       this._cloneContainer.appendChild(clone);
     });
