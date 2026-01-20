@@ -29,6 +29,16 @@
         margin: 0;
       }
 
+      .header-nav {
+        display: flex;
+        gap: 16px;
+      }
+
+      .header-nav a.active {
+        color: inherit;
+        text-decoration: none;
+      }
+
       .header-menu {
         display: flex;
         gap: 10px;
@@ -132,6 +142,10 @@
   <body>
     <div class="header">
       <h1>Loop Animation Demo</h1>
+      <nav class="header-nav">
+        <a href="index.html" class="active">通常版</a>
+        <a href="webcomponent.html">Web Component版</a>
+      </nav>
       <div class="header-menu">
         <button id="width-100" class="active">100%</button>
         <button id="width-500">500px</button>
