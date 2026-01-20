@@ -68,7 +68,8 @@
       .loop,
       .loop-static {
         display: flex;
-        width: var(--loop-width, 500px);
+        width: var(--loop-width, 100%);
+        max-width: 100%;
         overflow: hidden;
         background: #fff;
         border: 1px solid #ddd;
@@ -153,7 +154,7 @@
         <div class="item">テキストアイテム</div>
         <div class="item">
           <img
-            src="https://picsum.photos/120/80"
+            src="https://picsum.photos/640/200"
             alt="sample image"
             style="display: block; border-radius: 4px"
           />
@@ -194,12 +195,30 @@
       </div>
 
       <!-- コンテンツが少ない場合 -->
-      <div class="loop-static" data-label="コンテンツが少ない場合">
+      <div
+        class="loop-static"
+        data-label="コンテンツが少ない場合"
+        data-scroll="50"
+      >
         <div class="item">Only One</div>
       </div>
 
-      <!-- コンテンツが多い場合 -->
-      <div class="loop-static" data-label="コンテンツが多い場合">
+      <!-- コンテンツが少ない場合（充填モード） -->
+      <div
+        class="loop-static"
+        data-label="コンテンツが少ない場合（充填モード）"
+        data-scroll="50"
+        data-fill
+      >
+        <div class="item">Only One</div>
+      </div>
+
+      <!-- コンテンツが多い場合（逆方向） -->
+      <div
+        class="loop-static"
+        data-label="コンテンツが多い場合（逆方向）"
+        data-scroll="-200"
+      >
         <div class="item">A</div>
         <div class="item">B</div>
         <div class="item">C</div>
@@ -212,10 +231,10 @@
         <div class="item">J</div>
       </div>
 
-      <!-- 動的コンテンツ -->
+      <!-- 動的コンテンツ（テキスト） -->
       <div
         class="loop-static"
-        data-label="動的コンテンツ"
+        data-label="動的コンテンツ（テキスト）"
         id="dynamic-container"
       >
         <div class="item">Static</div>
@@ -238,18 +257,30 @@
     <script>
       // 現在の幅設定
       let currentWidth = "100%";
+      // デフォルトのスクロール速度（px/秒）
+      const DEFAULT_SCROLL_SPEED = 100;
       // 全ループの updateLayout 関数を保存
       const updateLayoutFns = [];
 
       function initLoop(container, originalItems) {
         const items = Array.from(container.children);
 
+        // スクロール速度を取得（data-scroll属性、px/秒）
+        const scrollSpeed =
+          parseFloat(container.dataset.scroll) || DEFAULT_SCROLL_SPEED;
+
+        // 充填モードを取得（data-fill属性）
+        const isFillMode = container.dataset.fill !== undefined;
+
         // トラック要素を作成
         const track = document.createElement("div");
         track.className = "loop-track";
 
-        // オリジナル要素をトラックに移動
+        // オリジナル要素をトラックに移動（ベースアイテムとして保存）
+        const baseItems = [];
         items.forEach((item, index) => {
+          item.dataset.baseItem = "true";
+          baseItems.push(item);
           track.appendChild(item);
           // クリックイベントをオリジナルにバイパス
           if (originalItems) {
@@ -271,29 +302,60 @@
         // 前回の幅を保存（無限ループ防止）
         let lastTrackWidth = 0;
 
+        // クリックイベントをバイパスするヘルパー
+        function addClickBypass(element, index) {
+          if (originalItems) {
+            element.addEventListener("click", (e) => {
+              e.stopPropagation();
+              originalItems[index % originalItems.length]?.click();
+            });
+          }
+        }
+
         // 幅とcloneを更新する関数
         function updateLayout() {
           // 一時的にcloneを空にして幅を計測
           cloneContainer.innerHTML = "";
           track.style.width = "";
 
-          // items の実際の幅を計算
-          const trackItems = track.querySelectorAll(":scope > .item");
-          let itemsWidth = 0;
-          trackItems.forEach((item) => {
+          // fill用クローンを削除
+          track.querySelectorAll("[data-fill-clone]").forEach((el) => el.remove());
+
+          // ベースアイテムの実際の幅を計算
+          let baseItemsWidth = 0;
+          baseItems.forEach((item) => {
             const style = getComputedStyle(item);
-            itemsWidth +=
+            baseItemsWidth +=
               item.offsetWidth +
               parseFloat(style.marginLeft) +
               parseFloat(style.marginRight);
           });
 
           const containerWidth = container.clientWidth;
-          // fit-content の場合はコンテンツ幅のみ使用
           const isFitContent = currentWidth === "fit-content";
-          const trackWidth = isFitContent
-            ? itemsWidth
-            : Math.max(containerWidth, itemsWidth);
+
+          // 充填モード: コンテナを埋めるまでアイテムを繰り返す
+          let trackWidth = baseItemsWidth;
+          if (isFillMode && !isFitContent && baseItemsWidth < containerWidth) {
+            const repeatCount = Math.ceil(containerWidth / baseItemsWidth);
+            // 繰り返し分のクローンを追加（1回目はベースアイテムなので2回目から）
+            for (let r = 1; r < repeatCount; r++) {
+              baseItems.forEach((item, index) => {
+                const fillClone = item.cloneNode(true);
+                fillClone.dataset.fillClone = "true";
+                delete fillClone.dataset.baseItem;
+                addClickBypass(fillClone, index);
+                track.insertBefore(fillClone, cloneContainer);
+              });
+            }
+            trackWidth = baseItemsWidth * repeatCount;
+          } else if (!isFitContent) {
+            trackWidth = Math.max(containerWidth, baseItemsWidth);
+          }
+
+          // スクロール速度からdurationを計算（幅 / 速度 = 秒）
+          const duration = trackWidth / Math.abs(scrollSpeed);
+          const isReverse = scrollSpeed < 0;
 
           // 幅が変わっていなければスキップ
           if (trackWidth === lastTrackWidth) {
@@ -301,15 +363,12 @@
             const currentItems = track.querySelectorAll(":scope > .item");
             currentItems.forEach((item, index) => {
               const clone = item.cloneNode(true);
-              if (originalItems) {
-                clone.addEventListener("click", (e) => {
-                  e.stopPropagation();
-                  originalItems[index]?.click();
-                });
-              }
+              addClickBypass(clone, index);
               cloneContainer.appendChild(clone);
             });
             track.style.width = `${trackWidth}px`;
+            track.style.animationDuration = `${duration}s`;
+            track.style.animationDirection = isReverse ? "reverse" : "normal";
             return;
           }
           lastTrackWidth = trackWidth;
@@ -318,19 +377,15 @@
           const currentItems = track.querySelectorAll(":scope > .item");
           currentItems.forEach((item, index) => {
             const clone = item.cloneNode(true);
-            // clone のクリックイベントもオリジナルにバイパス
-            if (originalItems) {
-              clone.addEventListener("click", (e) => {
-                e.stopPropagation();
-                originalItems[index]?.click();
-              });
-            }
+            addClickBypass(clone, index);
             cloneContainer.appendChild(clone);
           });
 
           // 幅を設定
           track.style.width = `${trackWidth}px`;
           cloneContainer.style.left = `${trackWidth}px`;
+          track.style.animationDuration = `${duration}s`;
+          track.style.animationDirection = isReverse ? "reverse" : "normal";
         }
 
         // 初回レイアウト
@@ -439,8 +494,8 @@
         updateLayoutFns.forEach((fn) => fn());
       }
 
-      // 全てのリソース読み込み完了後に初期化
-      window.addEventListener("load", () => {
+      // DOM解析完了後に初期化（画像ロード前に実行される）
+      document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".loop-static").forEach(createCompareLayout);
 
         // 幅切り替えボタン
