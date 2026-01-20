@@ -279,6 +279,13 @@ class LoopScroll extends HTMLElement {
     // cloneの位置を設定（トラック幅の右端）
     this._cloneContainer.style.left = `${trackWidth}px`;
 
+    // speed=0の場合はアニメーションをスキップ
+    if (speed === 0) {
+      this._animation?.cancel();
+      this._animation = null;
+      return;
+    }
+
     // 現在のアニメーション進行率を保存
     let progress = 0;
     if (this._animation) {
