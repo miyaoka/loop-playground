@@ -17,23 +17,50 @@
         background: #f5f5f5;
       }
 
-      h1 {
+      /* ヘッダー */
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 20px;
         margin-bottom: 20px;
+      }
+
+      .header h1 {
+        margin: 0;
+      }
+
+      .header-menu {
+        display: flex;
+        gap: 10px;
+      }
+
+      .header-menu button {
+        padding: 8px 16px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: #fff;
+        cursor: pointer;
+      }
+
+      .header-menu button.active {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
       }
 
       h2 {
         margin: 20px 0 10px;
       }
 
-      /* 2カラムレイアウト（JS生成） */
+      /* 縦並びレイアウト */
       .compare {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
         margin-bottom: 40px;
       }
 
-      .compare-column h3 {
+      .compare-item h3 {
         margin-bottom: 10px;
       }
 
@@ -41,7 +68,7 @@
       .loop,
       .loop-static {
         display: flex;
-        width: 500px;
+        width: var(--loop-width, 500px);
         overflow: hidden;
         background: #fff;
         border: 1px solid #ddd;
@@ -85,6 +112,11 @@
         white-space: nowrap;
       }
 
+      button.item {
+        border: none;
+        cursor: pointer;
+      }
+
       /* ホバーで一時停止 */
       .loop:hover .loop-track {
         animation-play-state: paused;
@@ -92,90 +124,124 @@
 
       /* デバッグ用：cloneされた要素を薄く表示 */
       .loop-clone .item {
-        opacity: 0.6;
+        opacity: 0.4;
       }
     </style>
   </head>
   <body>
-    <h1>Loop Animation Demo</h1>
-
-    <!-- 基本 -->
-    <h2>基本（テキストのみ）</h2>
-    <div class="loop-static">
-      <div class="item">Item 1</div>
-      <div class="item">Item 2</div>
-      <div class="item">Item 3</div>
-      <div class="item">Item 4</div>
-      <div class="item">Item 5</div>
-    </div>
-
-    <!-- 雑多なコンテンツ -->
-    <h2>雑多なコンテンツ</h2>
-    <div class="loop-static">
-      <div class="item">テキストアイテム</div>
-      <div class="item">
-        <img
-          src="https://picsum.photos/120/80"
-          alt="sample image"
-          style="display: block; border-radius: 4px"
-        />
-      </div>
-      <div class="item" style="padding: 10px">
-        <iframe
-          width="560"
-          height="315"
-          src="https://www.youtube.com/embed/GQigLJ6iV4Y?si=Zgzs1CVpn43QP3D4"
-          title="YouTube video player"
-          frameborder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          referrerpolicy="strict-origin-when-cross-origin"
-          allowfullscreen
-        ></iframe>
-      </div>
-      <div class="item">短い</div>
-      <div class="item" style="width: 200px">
-        <p style="margin: 0">長めのテキストコンテンツ。複数行になる場合のテスト。</p>
-      </div>
-      <div class="item">
-        <img
-          src="https://picsum.photos/80/80"
-          alt="square image"
-          style="display: block; border-radius: 4px"
-        />
+    <div class="header">
+      <h1>Loop Animation Demo</h1>
+      <div class="header-menu">
+        <button id="width-100" class="active">100%</button>
+        <button id="width-500">500px</button>
+        <button id="width-fit">fit-content</button>
       </div>
     </div>
 
-    <!-- コンテンツが少ない場合 -->
-    <h2>コンテンツが少ない場合</h2>
-    <div class="loop-static">
-      <div class="item">Only One</div>
-    </div>
+    <div id="patterns">
+      <!-- 基本 -->
+      <div class="loop-static" data-label="基本（テキストのみ）">
+        <div class="item">Item 1</div>
+        <div class="item">Item 2</div>
+        <div class="item">Item 3</div>
+        <div class="item">Item 4</div>
+        <div class="item">Item 5</div>
+      </div>
 
-    <!-- コンテンツが多い場合 -->
-    <h2>コンテンツが多い場合</h2>
-    <div class="loop-static">
-      <div class="item">A</div>
-      <div class="item">B</div>
-      <div class="item">C</div>
-      <div class="item">D</div>
-      <div class="item">E</div>
-      <div class="item">F</div>
-      <div class="item">G</div>
-      <div class="item">H</div>
-      <div class="item">I</div>
-      <div class="item">J</div>
-    </div>
+      <!-- 雑多なコンテンツ -->
+      <div class="loop-static" data-label="雑多なコンテンツ">
+        <div class="item">テキストアイテム</div>
+        <div class="item">
+          <img
+            src="https://picsum.photos/120/80"
+            alt="sample image"
+            style="display: block; border-radius: 4px"
+          />
+        </div>
+        <div class="item" style="padding: 10px">
+          <iframe
+            width="560"
+            height="315"
+            src="https://www.youtube.com/embed/GQigLJ6iV4Y?si=Zgzs1CVpn43QP3D4"
+            title="YouTube video player"
+            frameborder="0"
+            allow="
+              accelerometer;
+              autoplay;
+              clipboard-write;
+              encrypted-media;
+              gyroscope;
+              picture-in-picture;
+              web-share;
+            "
+            referrerpolicy="strict-origin-when-cross-origin"
+            allowfullscreen
+          ></iframe>
+        </div>
+        <div class="item">短い</div>
+        <div class="item" style="width: 200px">
+          <p style="margin: 0">
+            長めのテキストコンテンツ。複数行になる場合のテスト。
+          </p>
+        </div>
+        <div class="item">
+          <img
+            src="https://picsum.photos/80/80"
+            alt="square image"
+            style="display: block; border-radius: 4px"
+          />
+        </div>
+      </div>
 
-    <!-- 動的コンテンツ -->
-    <h2>動的コンテンツ</h2>
-    <div class="loop-static" id="dynamic-container">
-      <div class="item">Static</div>
-      <div class="item" id="dynamic-item">Loading...</div>
-      <div class="item">Static</div>
+      <!-- コンテンツが少ない場合 -->
+      <div class="loop-static" data-label="コンテンツが少ない場合">
+        <div class="item">Only One</div>
+      </div>
+
+      <!-- コンテンツが多い場合 -->
+      <div class="loop-static" data-label="コンテンツが多い場合">
+        <div class="item">A</div>
+        <div class="item">B</div>
+        <div class="item">C</div>
+        <div class="item">D</div>
+        <div class="item">E</div>
+        <div class="item">F</div>
+        <div class="item">G</div>
+        <div class="item">H</div>
+        <div class="item">I</div>
+        <div class="item">J</div>
+      </div>
+
+      <!-- 動的コンテンツ -->
+      <div
+        class="loop-static"
+        data-label="動的コンテンツ"
+        id="dynamic-container"
+      >
+        <div class="item">Static</div>
+        <div class="item" id="dynamic-item">Loading...</div>
+        <div class="item">Static</div>
+      </div>
+
+      <!-- クリックイベント -->
+      <div
+        class="loop-static"
+        data-label="クリックイベント"
+        id="click-container"
+      >
+        <button class="item" id="btn-1">Button 1</button>
+        <button class="item" id="btn-2">Button 2</button>
+        <button class="item" id="btn-3">Button 3</button>
+      </div>
     </div>
 
     <script>
-      function initLoop(container) {
+      // 現在の幅設定
+      let currentWidth = "100%";
+      // 全ループの updateLayout 関数を保存
+      const updateLayoutFns = [];
+
+      function initLoop(container, originalItems) {
         const items = Array.from(container.children);
 
         // トラック要素を作成
@@ -183,8 +249,15 @@
         track.className = "loop-track";
 
         // オリジナル要素をトラックに移動
-        items.forEach((item) => {
+        items.forEach((item, index) => {
           track.appendChild(item);
+          // クリックイベントをオリジナルにバイパス
+          if (originalItems) {
+            item.addEventListener("click", (e) => {
+              e.stopPropagation();
+              originalItems[index]?.click();
+            });
+          }
         });
 
         // トラックをコンテナに追加（幅計測のため先に追加）
@@ -195,19 +268,63 @@
         cloneContainer.className = "loop-clone";
         track.appendChild(cloneContainer);
 
+        // 前回の幅を保存（無限ループ防止）
+        let lastTrackWidth = 0;
+
         // 幅とcloneを更新する関数
         function updateLayout() {
           // 一時的にcloneを空にして幅を計測
           cloneContainer.innerHTML = "";
+          track.style.width = "";
 
-          const containerWidth = container.offsetWidth;
-          const contentWidth = track.scrollWidth;
-          const trackWidth = Math.max(containerWidth, contentWidth);
+          // items の実際の幅を計算
+          const trackItems = track.querySelectorAll(":scope > .item");
+          let itemsWidth = 0;
+          trackItems.forEach((item) => {
+            const style = getComputedStyle(item);
+            itemsWidth +=
+              item.offsetWidth +
+              parseFloat(style.marginLeft) +
+              parseFloat(style.marginRight);
+          });
+
+          const containerWidth = container.clientWidth;
+          // fit-content の場合はコンテンツ幅のみ使用
+          const isFitContent = currentWidth === "fit-content";
+          const trackWidth = isFitContent
+            ? itemsWidth
+            : Math.max(containerWidth, itemsWidth);
+
+          // 幅が変わっていなければスキップ
+          if (trackWidth === lastTrackWidth) {
+            // cloneだけ再作成
+            const currentItems = track.querySelectorAll(":scope > .item");
+            currentItems.forEach((item, index) => {
+              const clone = item.cloneNode(true);
+              if (originalItems) {
+                clone.addEventListener("click", (e) => {
+                  e.stopPropagation();
+                  originalItems[index]?.click();
+                });
+              }
+              cloneContainer.appendChild(clone);
+            });
+            track.style.width = `${trackWidth}px`;
+            return;
+          }
+          lastTrackWidth = trackWidth;
 
           // cloneを再作成
           const currentItems = track.querySelectorAll(":scope > .item");
-          currentItems.forEach((item) => {
+          currentItems.forEach((item, index) => {
             const clone = item.cloneNode(true);
+            // clone のクリックイベントもオリジナルにバイパス
+            if (originalItems) {
+              clone.addEventListener("click", (e) => {
+                e.stopPropagation();
+                originalItems[index]?.click();
+              });
+            }
             cloneContainer.appendChild(clone);
           });
 
@@ -229,6 +346,9 @@
           resizeObserver.observe(item);
         });
 
+        // コンテナも監視（幅変更時）
+        resizeObserver.observe(container);
+
         // MutationObserver でコンテンツ変更を監視
         const mutationObserver = new MutationObserver(() => {
           updateLayout();
@@ -240,62 +360,121 @@
             characterData: true,
           });
         });
+
+        // updateLayout を外部から呼べるように保存（キャッシュリセット付き）
+        updateLayoutFns.push(() => {
+          lastTrackWidth = 0;
+          updateLayout();
+        });
       }
 
-      // .loop-static からスクロール版を生成して横並びにする
+      // .loop-static からスクロール版を生成して縦並びにする
       function createCompareLayout(staticContainer) {
-        // 2カラムレイアウト用のラッパーを作成
+        const label = staticContainer.dataset.label;
+        const originalItems = Array.from(
+          staticContainer.querySelectorAll(".item"),
+        );
+        const parent = staticContainer.parentNode;
+        const nextSibling = staticContainer.nextSibling;
+
+        // 縦並びレイアウト
         const compare = document.createElement("div");
         compare.className = "compare";
 
-        // スクロール版カラム
-        const scrollColumn = document.createElement("div");
-        scrollColumn.className = "compare-column";
-        const scrollTitle = document.createElement("h3");
-        scrollTitle.textContent = "スクロールあり";
-        scrollColumn.appendChild(scrollTitle);
+        // オリジナル
+        const originalItem = document.createElement("div");
+        originalItem.className = "compare-item";
+        const originalTitle = document.createElement("h3");
+        originalTitle.textContent = "オリジナル";
+        originalItem.appendChild(originalTitle);
+        originalItem.appendChild(staticContainer);
+        compare.appendChild(originalItem);
 
-        // staticContainer を clone してスクロール版を作成
+        // スクロール版
+        const scrollItem = document.createElement("div");
+        scrollItem.className = "compare-item";
+        const scrollTitle = document.createElement("h3");
+        scrollTitle.textContent = "スクロール";
+        scrollItem.appendChild(scrollTitle);
+
         const loopContainer = staticContainer.cloneNode(true);
         loopContainer.className = "loop";
         loopContainer.removeAttribute("id");
-        // clone内のidも削除（重複防止）
-        loopContainer.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
-        scrollColumn.appendChild(loopContainer);
+        loopContainer.removeAttribute("data-label");
+        loopContainer
+          .querySelectorAll("[id]")
+          .forEach((el) => el.removeAttribute("id"));
+        scrollItem.appendChild(loopContainer);
+        compare.appendChild(scrollItem);
 
-        // 元要素カラム
-        const staticColumn = document.createElement("div");
-        staticColumn.className = "compare-column";
-        const staticTitle = document.createElement("h3");
-        staticTitle.textContent = "元要素";
-        staticColumn.appendChild(staticTitle);
-
-        // staticContainer をこのカラムに移動
-        staticColumn.appendChild(staticContainer.cloneNode(true));
-
-        compare.appendChild(staticColumn);
-        compare.appendChild(scrollColumn);
+        // h2を生成
+        const h2 = document.createElement("h2");
+        h2.textContent = label;
 
         // 元の位置に挿入
-        staticContainer.parentNode.replaceChild(compare, staticContainer);
+        parent.insertBefore(h2, nextSibling);
+        parent.insertBefore(compare, nextSibling);
 
         // スクロール版を初期化
-        initLoop(loopContainer);
+        initLoop(loopContainer, originalItems);
+      }
+
+      // 幅を切り替える
+      function setLoopWidth(width) {
+        currentWidth = width;
+        document.documentElement.style.setProperty("--loop-width", width);
+
+        // ボタンのactive状態を更新
+        document
+          .getElementById("width-100")
+          .classList.toggle("active", width === "100%");
+        document
+          .getElementById("width-500")
+          .classList.toggle("active", width === "500px");
+        document
+          .getElementById("width-fit")
+          .classList.toggle("active", width === "fit-content");
+
+        // 全ループを再計算
+        updateLayoutFns.forEach((fn) => fn());
       }
 
       // 全てのリソース読み込み完了後に初期化
       window.addEventListener("load", () => {
         document.querySelectorAll(".loop-static").forEach(createCompareLayout);
+
+        // 幅切り替えボタン
+        document
+          .getElementById("width-100")
+          .addEventListener("click", () => setLoopWidth("100%"));
+        document
+          .getElementById("width-500")
+          .addEventListener("click", () => setLoopWidth("500px"));
+        document
+          .getElementById("width-fit")
+          .addEventListener("click", () => setLoopWidth("fit-content"));
       });
 
       // 3秒後に動的にテキストを設定（API取得を模擬）
       setTimeout(() => {
-        const longText = "これはAPIから取得した長いテキストです。動的に設定されます。";
+        const longText =
+          "これはAPIから取得した長いテキストです。動的に設定されます。";
         const dynamicItem = document.getElementById("dynamic-item");
         if (dynamicItem) {
           dynamicItem.textContent = longText;
         }
       }, 3000);
+
+      // ボタンのクリックイベント
+      document
+        .getElementById("btn-1")
+        ?.addEventListener("click", () => alert(1));
+      document
+        .getElementById("btn-2")
+        ?.addEventListener("click", () => alert(2));
+      document
+        .getElementById("btn-3")
+        ?.addEventListener("click", () => alert(3));
     </script>
   </body>
 </html>
