@@ -11,6 +11,9 @@ class LoopScroll extends HTMLElement {
     this._mutationObserver = null;
     this._track = null;
     this._cloneContainer = null;
+    this._sizer = null;
+    this._animation = null;
+    this._rafId = null;
   }
 
   connectedCallback() {
@@ -43,9 +46,31 @@ class LoopScroll extends HTMLElement {
     // 子要素を取得
     this._baseItems = Array.from(this.children);
 
-    // トラック要素を作成
+    // サイズ維持用の要素（コンテナのサイズを決定する）
+    this._sizer = document.createElement("div");
+    this._sizer.className = "loop-sizer";
+    Object.assign(this._sizer.style, {
+      display: "flex",
+      width: "max-content",
+      visibility: "hidden",
+    });
+
+    // sizerにbaseItemsのクローンを追加（サイズ計算用）
+    this._baseItems.forEach((item) => {
+      const clone = item.cloneNode(true);
+      this._sizer.appendChild(clone);
+    });
+
+    // トラック要素を作成（absoluteでコンテナサイズに影響しない）
     this._track = document.createElement("div");
     this._track.className = "loop-track";
+    Object.assign(this._track.style, {
+      position: "absolute",
+      top: "0",
+      left: "0",
+      display: "flex",
+      width: "max-content",
+    });
 
     // 子要素をトラックに移動
     this._baseItems.forEach((item) => {
@@ -56,9 +81,15 @@ class LoopScroll extends HTMLElement {
     // clone用のコンテナを作成
     this._cloneContainer = document.createElement("div");
     this._cloneContainer.className = "loop-clone";
+    Object.assign(this._cloneContainer.style, {
+      position: "absolute",
+      top: "0",
+      display: "flex",
+    });
     this._track.appendChild(this._cloneContainer);
 
-    // トラックを追加
+    // 要素を追加
+    this.appendChild(this._sizer);
     this.appendChild(this._track);
   }
 
@@ -114,15 +145,38 @@ class LoopScroll extends HTMLElement {
       return;
     }
 
+    // debug属性がある場合のみログ出力
+    if (this.hasAttribute("debug")) {
+      console.log("_updateLayout called");
+    }
+
+    // 既存のrequestAnimationFrameをキャンセル
+    if (this._rafId) {
+      cancelAnimationFrame(this._rafId);
+    }
+
+    // 測定前にトラック幅をリセット
+    this._track.style.width = "max-content";
+
+    // レイアウト更新を待ってから測定（2フレーム待つ）
+    this._rafId = requestAnimationFrame(() => {
+      this._rafId = requestAnimationFrame(() => {
+        this._rafId = null;
+        this._measureAndAnimate();
+      });
+    });
+  }
+
+  _measureAndAnimate() {
+    if (!this._track || !this._cloneContainer || this._baseItems.length === 0) {
+      return;
+    }
+
     // cloneをクリア
     this._cloneContainer.innerHTML = "";
 
-    // fill用クローンを削除
-    this._track
-      .querySelectorAll("[data-fill-clone]")
-      .forEach((el) => el.remove());
-
-    this._track.style.width = "";
+    // cloneの位置をリセット
+    this._cloneContainer.style.left = "0";
 
     // ベースアイテムの幅を計算
     let baseItemsWidth = 0;
@@ -139,11 +193,19 @@ class LoopScroll extends HTMLElement {
     const isFillMode = this.fill;
     const isReverse = speed < 0;
 
-    // トラック幅を計算
-    let trackWidth = baseItemsWidth;
+    // debug属性がある場合のみログ出力
+    if (this.hasAttribute("debug")) {
+      console.log("_measureAndAnimate:", { containerWidth, baseItemsWidth, isFillMode, shouldFill: isFillMode && baseItemsWidth < containerWidth });
+    }
+
+    // fillクローンを削除してから再作成（点滅防止のため測定後に削除）
+    this._track
+      .querySelectorAll("[data-fill-clone]")
+      .forEach((el) => el.remove());
+
+    // fill mode: コンテナを埋めるまでアイテムを繰り返す
     if (isFillMode && baseItemsWidth < containerWidth) {
       const repeatCount = Math.ceil(containerWidth / baseItemsWidth);
-      // fill用クローンを追加
       for (let r = 1; r < repeatCount; r++) {
         this._baseItems.forEach((item, index) => {
           const fillClone = item.cloneNode(true);
@@ -153,9 +215,16 @@ class LoopScroll extends HTMLElement {
           this._track.insertBefore(fillClone, this._cloneContainer);
         });
       }
-      trackWidth = baseItemsWidth * repeatCount;
-    } else {
-      trackWidth = Math.max(containerWidth, baseItemsWidth);
+    }
+
+    // トラックの実際の幅を取得（fillクローン含む）
+    const trackContentWidth = this._track.offsetWidth;
+    // アニメーション用の幅（コンテナ幅かコンテンツ幅の大きい方）
+    const trackWidth = Math.max(containerWidth, trackContentWidth);
+
+    // debug属性がある場合のみログ出力
+    if (this.hasAttribute("debug")) {
+      console.log({ containerWidth, baseItemsWidth, trackContentWidth, trackWidth });
     }
 
     // 幅が変わっていなければスキップ
@@ -170,7 +239,8 @@ class LoopScroll extends HTMLElement {
         this._addClickBypass(clone, index);
         this._cloneContainer.appendChild(clone);
       });
-      this._track.style.width = `${trackWidth}px`;
+      // cloneの位置を再設定
+      this._cloneContainer.style.left = `${trackWidth}px`;
       return;
     }
     this._lastTrackWidth = trackWidth;
@@ -186,12 +256,35 @@ class LoopScroll extends HTMLElement {
       this._cloneContainer.appendChild(clone);
     });
 
-    // スタイルを設定
-    const duration = trackWidth / Math.abs(speed);
-    this._track.style.width = `${trackWidth}px`;
+    // cloneの位置を設定（トラック幅の右端）
     this._cloneContainer.style.left = `${trackWidth}px`;
-    this._track.style.animationDuration = `${duration}s`;
-    this._track.style.animationDirection = isReverse ? "reverse" : "normal";
+
+    // 現在のアニメーション進行率を保存
+    let progress = 0;
+    if (this._animation) {
+      const currentTime = this._animation.currentTime ?? 0;
+      const oldDuration = this._animation.effect?.getTiming().duration ?? 1;
+      progress = (currentTime / oldDuration) % 1;
+      this._animation.cancel();
+    }
+
+    // Web Animations APIでアニメーション設定（固定ピクセル値で移動）
+    const duration = trackWidth / Math.abs(speed) * 1000; // ms
+    this._animation = this._track.animate(
+      [
+        { transform: "translateX(0)" },
+        { transform: `translateX(-${trackWidth}px)` },
+      ],
+      {
+        duration,
+        iterations: Infinity,
+        easing: "linear",
+        direction: isReverse ? "reverse" : "normal",
+      }
+    );
+
+    // 進行率を復元
+    this._animation.currentTime = progress * duration;
   }
 }
 

@@ -79,19 +79,6 @@
         animation-play-state: paused;
       }
 
-      .loop-track {
-        position: relative;
-        display: flex;
-        animation: scroll 10s linear infinite;
-      }
-
-      .loop-clone {
-        position: absolute;
-        left: 100%;
-        top: 0;
-        display: flex;
-      }
-
       @keyframes scroll {
         0% {
           transform: translateX(0);
@@ -104,11 +91,11 @@
       /* デバッグ用：fill用クローンをグレースケールで表示 */
       .debug [data-fill-clone] {
         filter: grayscale(1);
+        opacity: 0.8;
       }
 
       /* デバッグ用：loop-clone内の要素をグレースケール+薄く表示 */
       .debug .loop-clone .item {
-        filter: grayscale(1);
         opacity: 0.5;
       }
 
@@ -173,12 +160,14 @@
 
     <h2>コンテンツが少ない場合</h2>
     <loop-scroll speed="50">
-      <div class="item">Only One</div>
+      <div class="item">First</div>
+      <div class="item">Second</div>
     </loop-scroll>
 
     <h2>コンテンツが少ない場合（充填モード）</h2>
-    <loop-scroll speed="50" fill>
-      <div class="item">Only One</div>
+    <loop-scroll speed="50" fill debug>
+      <div class="item">First</div>
+      <div class="item">Second</div>
     </loop-scroll>
 
     <h2>画像コンテンツ</h2>
@@ -263,7 +252,6 @@
             "これはAPIから取得した長いテキストです。動的に設定されます。";
         }
       }, 3000);
-
     </script>
   </body>
 </html>
