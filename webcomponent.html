@@ -183,7 +183,27 @@
       <div class="item">短い</div>
       <div class="item">
         <img
-          src="https://picsum.photos/80/300"
+          src="https://picsum.photos/500/300"
+          alt="square"
+          style="display: block; border-radius: 4px"
+        />
+      </div>
+    </loop-scroll>
+
+    <h2>画像コンテンツ fill</h2>
+    <loop-scroll fill>
+      <div class="item">テキスト</div>
+      <div class="item">
+        <img
+          src="https://picsum.photos/400/200"
+          alt="sample"
+          style="display: block; border-radius: 4px"
+        />
+      </div>
+      <div class="item">短い</div>
+      <div class="item">
+        <img
+          src="https://picsum.photos/500/300"
           alt="square"
           style="display: block; border-radius: 4px"
         />
@@ -193,7 +213,14 @@
     <h2>動的コンテンツ</h2>
     <loop-scroll>
       <div class="item">Static</div>
-      <div class="item" id="dynamic-item">Loading...</div>
+      <div class="item dynamic-item">Loading...</div>
+      <div class="item">Static</div>
+    </loop-scroll>
+
+    <h2>動的コンテンツ fill</h2>
+    <loop-scroll fill>
+      <div class="item">Static</div>
+      <div class="item dynamic-item">Loading...</div>
       <div class="item">Static</div>
     </loop-scroll>
 
@@ -253,11 +280,10 @@
 
       // 3秒後に動的にテキストを設定
       setTimeout(() => {
-        const dynamicItem = document.getElementById("dynamic-item");
-        if (dynamicItem) {
-          dynamicItem.textContent =
+        document.querySelectorAll(".dynamic-item").forEach((el) => {
+          el.textContent =
             "これはAPIから取得した長いテキストです。動的に設定されます。";
-        }
+        });
       }, 3000);
     </script>
   </body>
