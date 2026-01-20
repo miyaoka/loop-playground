@@ -5,15 +5,22 @@ class LoopScroll extends HTMLElement {
 
   constructor() {
     super();
+    // オリジナルの子要素
     this._baseItems = [];
+    // 前回のトラック幅（変更検知用）
     this._lastTrackWidth = 0;
+    // サイズ変更監視
     this._resizeObserver = null;
+    // コンテンツ変更監視
     this._mutationObserver = null;
+    // アニメーション対象の要素
     this._track = null;
+    // ループ用クローンのコンテナ
     this._cloneContainer = null;
+    // コンテナサイズ決定用の要素
     this._sizer = null;
+    // Web Animations APIのインスタンス
     this._animation = null;
-    this._rafId = null;
   }
 
   connectedCallback() {
@@ -39,10 +46,6 @@ class LoopScroll extends HTMLElement {
     this._resizeObserver?.disconnect();
     this._mutationObserver?.disconnect();
     this._animation?.cancel();
-    if (this._rafId) {
-      cancelAnimationFrame(this._rafId);
-      this._rafId = null;
-    }
   }
 
   attributeChangedCallback() {
@@ -167,21 +170,10 @@ class LoopScroll extends HTMLElement {
       return;
     }
 
-    // 既存のrequestAnimationFrameをキャンセル
-    if (this._rafId) {
-      cancelAnimationFrame(this._rafId);
-    }
-
     // 測定前にトラック幅をリセット
     this._track.style.width = "";
 
-    // レイアウト更新を待ってから測定（2フレーム待つ）
-    this._rafId = requestAnimationFrame(() => {
-      this._rafId = requestAnimationFrame(() => {
-        this._rafId = null;
-        this._measureAndAnimate();
-      });
-    });
+    this._measureAndAnimate();
   }
 
   _measureAndAnimate() {
