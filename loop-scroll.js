@@ -19,11 +19,30 @@ class LoopScroll extends HTMLElement {
   connectedCallback() {
     this._render();
     this._initLoop();
+    this._setupHoverPause();
+  }
+
+  _setupHoverPause() {
+    this.addEventListener("mouseenter", () => {
+      if (this.hasAttribute("hover-pause")) {
+        this._animation?.pause();
+      }
+    });
+    this.addEventListener("mouseleave", () => {
+      if (this.hasAttribute("hover-pause")) {
+        this._animation?.play();
+      }
+    });
   }
 
   disconnectedCallback() {
     this._resizeObserver?.disconnect();
     this._mutationObserver?.disconnect();
+    this._animation?.cancel();
+    if (this._rafId) {
+      cancelAnimationFrame(this._rafId);
+      this._rafId = null;
+    }
   }
 
   attributeChangedCallback() {
@@ -148,11 +167,6 @@ class LoopScroll extends HTMLElement {
       return;
     }
 
-    // debug属性がある場合のみログ出力
-    if (this.hasAttribute("debug")) {
-      console.log("_updateLayout called");
-    }
-
     // 既存のrequestAnimationFrameをキャンセル
     if (this._rafId) {
       cancelAnimationFrame(this._rafId);
@@ -175,6 +189,15 @@ class LoopScroll extends HTMLElement {
       return;
     }
 
+    // sizerのクローンを更新（動的コンテンツ対応）
+    this._sizer.innerHTML = "";
+    this._baseItems.forEach((item) => {
+      const clone = item.cloneNode(true);
+      clone.removeAttribute("id");
+      clone.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
+      this._sizer.appendChild(clone);
+    });
+
     // cloneをクリア
     this._cloneContainer.innerHTML = "";
 
@@ -195,11 +218,6 @@ class LoopScroll extends HTMLElement {
     const speed = this.speed;
     const isFillMode = this.fill;
     const isReverse = speed < 0;
-
-    // debug属性がある場合のみログ出力
-    if (this.hasAttribute("debug")) {
-      console.log("_measureAndAnimate:", { containerWidth, baseItemsWidth, isFillMode, shouldFill: isFillMode && baseItemsWidth < containerWidth });
-    }
 
     // fillクローンを削除してから再作成（点滅防止のため測定後に削除）
     this._track
@@ -224,11 +242,6 @@ class LoopScroll extends HTMLElement {
     const trackContentWidth = this._track.offsetWidth;
     // アニメーション用の幅（コンテナ幅かコンテンツ幅の大きい方）
     const trackWidth = Math.max(containerWidth, trackContentWidth);
-
-    // debug属性がある場合のみログ出力
-    if (this.hasAttribute("debug")) {
-      console.log({ containerWidth, baseItemsWidth, trackContentWidth, trackWidth });
-    }
 
     // 幅が変わっていなければスキップ
     if (trackWidth === this._lastTrackWidth) {
